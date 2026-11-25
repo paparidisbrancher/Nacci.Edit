@@ -12,6 +12,7 @@ import json
 import os
 import re
 import shutil
+import statistics
 import subprocess
 import sys
 import urllib.parse
@@ -210,7 +211,9 @@ def cmd_ref_analyze(args):
             cmd = [
                 ytdlp_bin,
                 "--no-playlist",
-                "-f", "mp4/best",
+                # Vídeo + áudio juntos: o gancho falado faz parte da referência ("mp4/best" baixava vídeo mudo)
+                "-f", "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]/bv*+ba/b",
+                "--merge-output-format", "mp4",
                 "--write-info-json",
                 "-o", str(video_out),
                 url,
@@ -238,6 +241,10 @@ def cmd_ref_analyze(args):
             except Exception:
                 pass
 
+        if not duration_sec:
+            from ffmpeg_tools import get_duration
+            duration_sec = round(get_duration(ffmpeg_bin, video_out), 2)
+
         # Scene detection
         scene_cmd = [
             ffmpeg_bin, "-i", str(video_out),
@@ -261,14 +268,31 @@ def cmd_ref_analyze(args):
             str(frames_dir / "frame_%02d.jpg")
         ]
         subprocess.run(extract_cmd, capture_output=True, text=True)
+        # O gancho decide o vídeo: um quadro a cada segundo dos 3 primeiros (ideia do /steal do Melvynx)
+        for t in (0.2, 1.0, 2.0, 3.0):
+            subprocess.run([ffmpeg_bin, "-y", "-v", "error", "-ss", str(t), "-i", str(video_out), "-frames:v", "1",
+                            "-vf", "scale=540:-1", str(frames_dir / f"gancho_{t:.1f}s.jpg")], capture_output=True)
         meta_info["frames"] = [str(p.relative_to(project_dir)) for p in sorted(frames_dir.glob("*.jpg"))]
+
+        # A fala da referência, com tempos, para ler o gancho e o ritmo do texto
+        try:
+            from ffmpeg_tools import pack_words, transcribe_words
+            words, _ = transcribe_words(video_out, "small", "")
+            meta_info["speech"] = pack_words(words)
+        except (SystemExit, Exception) as e:
+            print(f"[AVISO] Sem transcrição da referência: {e}")
 
     num_cuts = len(cuts_timestamps)
     asl = round(duration_sec / (num_cuts + 1), 2) if duration_sec > 0 else 0.0
+    bounds = [0.0] + [t for t in cuts_timestamps if 0 < t < duration_sec] + [duration_sec]
+    shots = [b - a for a, b in zip(bounds, bounds[1:]) if b > a]
     meta_info["duration_sec"] = duration_sec
     meta_info["detected_cuts_count"] = num_cuts
     meta_info["cut_timestamps"] = cuts_timestamps
     meta_info["average_shot_length_sec"] = asl
+    meta_info["median_shot_length_sec"] = round(statistics.median(shots), 2) if shots and duration_sec else 0.0
+    meta_info["cuts_per_minute"] = round(num_cuts * 60 / duration_sec, 1) if duration_sec else 0.0
+    meta_info["cuts_first_3s"] = len([t for t in cuts_timestamps if t <= 3.0])
     meta_info["notes"] = args.notes or ""
 
     data.setdefault("references", []).append(meta_info)
@@ -285,11 +309,16 @@ def cmd_ref_analyze(args):
         f"- **Duração:** {duration_sec}s\n"
         f"- **Total de Cortes Detectados:** {num_cuts}\n"
         f"- **Tempo Médio por Plano (ASL):** {asl}s por corte\n"
+        f"- **Mediana do Plano:** {meta_info['median_shot_length_sec']}s (menos enganada por um plano longo que a média)\n"
+        f"- **Cortes por Minuto:** {meta_info['cuts_per_minute']} | **Cortes nos 3 primeiros segundos:** {meta_info['cuts_first_3s']}\n"
         f"- **Timestamps dos Cortes:** {', '.join(map(str, cuts_timestamps)) if cuts_timestamps else 'N/A'}\n"
         f"- **Frames Extraídos para IA:** {', '.join(meta_info['frames']) if meta_info['frames'] else 'Nenhum'}\n"
         f"- **Notas da Cliente:** {meta_info['notes']}\n\n"
-        "## Instrução para o Agente (Antigravity / Claude)\n"
-        "Use a ferramenta `read_file` nos frames extraídos acima para analisar o estilo de legenda, cores, enquadramento do gancho nos primeiros 3 segundos e tipo de B-roll usado na referência.\n",
+        + (f"## Fala da Referência\n```\n{meta_info['speech']}\n```\n\n" if meta_info.get("speech") else "")
+        + "## Instrução para o Agente (Antigravity / Claude)\n"
+        "Abra os frames `gancho_*.jpg` e os demais e descreva: o que acontece nos 3 primeiros segundos (fala, texto na tela, "
+        "movimento), o estilo e a posição da legenda, as cores, o enquadramento e a proporção de B-roll. "
+        "Salve o que vale copiar em `clients/<cliente>.yaml` (`instagram_references.saved_references`).\n",
         encoding="utf-8",
     )
     print(f"[3/3] Referência {ref_id} registrada com sucesso! Relatório salvo em: {report_md}")
@@ -664,9 +693,38 @@ def cmd_approve(args):
 
 
 # ============================================================================
+# DOCTOR: o que está pronto na máquina e o que falta (ideia do ffmpeg-skill e do Kinocut)
+# ============================================================================
+def cmd_doctor(args):
+    load_env(Path(__file__).resolve().parent.parent)
+    ffmpeg = shutil.which("ffmpeg")
+    filters = subprocess.run([ffmpeg, "-hide_banner", "-filters"], capture_output=True, text=True).stdout if ffmpeg else ""
+    try:
+        import faster_whisper  # noqa: F401
+        whisper_ok = True
+    except ImportError:
+        whisper_ok = False
+    checks = [
+        ("ffmpeg", bool(ffmpeg), "obrigatório", "winget install Gyan.FFmpeg"),
+        ("ffprobe", bool(shutil.which("ffprobe")), "obrigatório", "vem com o FFmpeg"),
+        ("libass (legendas)", " ass " in filters, "para 'captions'", "use o build 'full' do FFmpeg (Gyan.FFmpeg)"),
+        ("yt-dlp", bool(shutil.which("yt-dlp")), "para referências e YouTube", "pip install yt-dlp"),
+        ("faster-whisper", whisper_ok, "para 'transcribe' e 'captions'", "pip install faster-whisper"),
+        ("PEXELS_API_KEY", bool(os.environ.get("PEXELS_API_KEY")), "opcional", "chave grátis em pexels.com/api"),
+        ("PIXABAY_API_KEY", bool(os.environ.get("PIXABAY_API_KEY")), "opcional", "chave grátis em pixabay.com/api/docs"),
+    ]
+    for name, ok, why, fix in checks:
+        print(f"  [{'OK' if ok else 'FALTA'}] {name:<18} {why}" + ("" if ok else f"  ->  {fix}"))
+    if not all(ok for _, ok, why, _ in checks if why == "obrigatório"):
+        sys.exit(1)
+
+
+# ============================================================================
 # CLI PARSER
 # ============================================================================
 def main():
+    sys.stdout.reconfigure(encoding="utf-8")  # acentos certos no terminal do Windows
+    sys.stderr.reconfigure(encoding="utf-8")
     parser = argparse.ArgumentParser(description="Nacci.Edit CLI - Motor de B-Rolls e Gestão de Edição para Agências")
     sub = parser.add_subparsers(dest="command", required=True)
 
@@ -721,6 +779,10 @@ def main():
     p_app.add_argument("--trim-end", default="", help="Fim do corte para vídeos longos (ex: 00:00:10)")
     p_app.add_argument("--metadata-only", action="store_true", help="Apenas registrar aprovação sem baixar o arquivo pesado agora")
     p_app.set_defaults(func=cmd_approve)
+
+    # doctor
+    p_doc = sub.add_parser("doctor", help="Confere FFmpeg, yt-dlp, faster-whisper e chaves")
+    p_doc.set_defaults(func=cmd_doctor)
 
     args = parser.parse_args()
     args.func(args)

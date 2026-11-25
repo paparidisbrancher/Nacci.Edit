@@ -160,10 +160,17 @@ def cmd_normalize_audio(args):
     inp = Path(args.input).resolve()
     out = safe_output([inp], args.output, args.overwrite)
 
-    print(f"[ÁUDIO] Normalizando {inp.name} para {args.lufs} LUFS...")
+    print(f"[ÁUDIO] Normalizando {inp.name} para {args.lufs} LUFS (2 passadas: mede, depois aplica)...")
+    target = f"loudnorm=I={args.lufs}:TP=-2:LRA=11"  # -2 dB: o AAC cria picos acima do que o loudnorm prevê
+    # 1ª passada só mede. Uma passada única erra em clipe curto (deu -12,2 com alvo -14 num Reel de 19 s).
+    res = subprocess.run([ffmpeg, "-hide_banner", "-nostats", "-i", str(inp), "-af", f"{target}:print_format=json",
+                          "-f", "null", "-"], capture_output=True, text=True)
+    m = json.loads(res.stderr[res.stderr.rfind("{"):res.stderr.rfind("}") + 1])
+    af = (f"{target}:measured_I={m['input_i']}:measured_TP={m['input_tp']}:measured_LRA={m['input_lra']}"
+          f":measured_thresh={m['input_thresh']}:offset={m['target_offset']}:linear=true")
     cmd = [
         ffmpeg, "-y", "-i", str(inp),
-        "-af", f"loudnorm=I={args.lufs}:TP=-1.5:LRA=11",
+        "-af", af, "-ar", "48000",
         "-c:v", "copy", "-c:a", "aac", "-b:a", "192k",
         str(out)
     ]
@@ -324,24 +331,34 @@ def srt_time(t: float) -> str:
 
 
 def chunk_words(words, n: int, max_gap: float = 0.6):
-    """Blocos de até n palavras; pausa longa ou fim de frase começa bloco novo."""
-    chunks, cur = [], []
+    """Blocos de até n palavras; pausa longa ou fim de frase começa bloco novo.
+    Cada frase é dividida em blocos equilibrados (7 palavras viram 3+2+2, não 3+3+1 com uma palavra sozinha)."""
+    phrases, cur = [], []
     for w in words:
-        if cur and (len(cur) >= n or w["start"] - cur[-1]["end"] > max_gap or cur[-1]["w"][-1:] in ".?!"):
-            chunks.append(cur)
+        if cur and (w["start"] - cur[-1]["end"] > max_gap or cur[-1]["w"][-1:] in ".?!"):
+            phrases.append(cur)
             cur = []
         cur.append(w)
     if cur:
-        chunks.append(cur)
+        phrases.append(cur)
+    chunks = []
+    for ph in phrases:
+        k = math.ceil(len(ph) / n)
+        sizes = [len(ph) // k + (1 if r < len(ph) % k else 0) for r in range(k)]
+        pos = 0
+        for size in sizes:
+            chunks.append(ph[pos:pos + size])
+            pos += size
     return chunks
 
 
 def ass_text(text: str, upper: bool) -> str:
     text = text.replace("\\", "/").replace("{", "(").replace("}", ")")
+    text = text.rstrip(",.;:") or text  # legenda de Reels não leva ponto nem vírgula; ? e ! ficam
     return text.upper() if upper else text
 
 
-def build_ass(words, width, height, colors, font, size, n_words, upper, pop) -> str:
+def build_ass(words, width, height, colors, font, size, n_words, upper, pop, reveal=False) -> str:
     base = ass_color(colors.get("text_light", "#FFFFFF"))
     high = ass_color(colors.get("secondary", "#FFD400"))
     outline = ass_color(colors.get("text_dark", "#000000"))
@@ -352,8 +369,10 @@ def build_ass(words, width, height, colors, font, size, n_words, upper, pop) -> 
         "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, "
         "Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, "
         "MarginL, MarginR, MarginV, Encoding",
-        f"Style: Nacci,{font},{size},{base},{high},{outline},&H64000000,-1,0,0,0,100,100,0,0,1,"
-        f"{max(2, size // 18)},0,2,80,80,{margin_v},1",
+        # Margens da área segura do Reels: 60 px à esquerda, 120 px à direita (coluna de curtir e comentar).
+        # Sombra na cor do contorno, 55% opaca.
+        f"Style: Nacci,{font},{size},{base},{high},{outline},{outline.replace('&H00', '&H73', 1)},-1,0,0,0,100,100,0,0,1,"
+        f"{max(2, size // 13)},3,2,60,120,{margin_v},1",
         "", "[Events]", "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text",
     ]
     for chunk in chunk_words(words, n_words):
@@ -363,7 +382,11 @@ def build_ass(words, width, height, colors, font, size, n_words, upper, pop) -> 
             parts = []
             for j, other in enumerate(chunk):
                 t = ass_text(other["w"], upper)
-                parts.append(f"{{\\c{high}}}{t}{{\\c{base}}}" if j == i else t)
+                if j == i:
+                    t = f"{{\\c{high}}}{t}{{\\c{base}}}"
+                elif reveal and j == i + 1:
+                    t = "{\\alpha&HFF&}" + t  # ainda não foi dita: guarda o lugar, mas não aparece
+                parts.append(t)
             anim = "{\\fscx85\\fscy85\\t(0,90,\\fscx100\\fscy100)}" if (pop and i == 0) else ""
             lines.append(f"Dialogue: 0,{ass_time(start)},{ass_time(end)},Nacci,,0,0,0,,{anim}{' '.join(parts)}")
     return "\n".join(lines) + "\n"
@@ -394,12 +417,16 @@ def cmd_captions(args):
     size = args.size or round(width * 0.075)
 
     ass_path = out.with_suffix(".ass")
-    ass_path.write_text(build_ass(words, width, height, colors, args.font, size, args.words, args.upper, not args.no_pop), encoding="utf-8")
+    ass_path.write_text(build_ass(words, width, height, colors, args.font, size, args.words, args.upper,
+                                  not args.no_pop, args.reveal), encoding="utf-8")
     out.with_suffix(".srt").write_text(build_srt(words, args.words), encoding="utf-8")
 
     print(f"[LEGENDAS] Queimando {len(words)} palavras em blocos de {args.words} ({args.font} {size}px)...")
     # O filtro 'ass' do FFmpeg se perde com 'C:\' no caminho; rodando na pasta do .ass basta o nome do arquivo.
-    cmd = [ffmpeg, "-y", "-i", str(inp), "-vf", f"ass={ass_path.name}",
+    vf = f"ass={ass_path.name}"
+    if args.fontsdir:  # fonte da marca sem precisar instalar no sistema
+        vf += ":fontsdir='" + str(Path(args.fontsdir).resolve()).replace("\\", "/").replace(":", "\\:") + "'"
+    cmd = [ffmpeg, "-y", "-i", str(inp), "-vf", vf,
            "-c:v", "libx264", "-preset", "fast", "-crf", "18", "-c:a", "copy", str(out)]
     subprocess.run(cmd, check=True, cwd=ass_path.parent)
     print(f"[SUCESSO] Vídeo legendado: {out}")
@@ -537,6 +564,8 @@ def main():
     p_cap.add_argument("--words", type=int, default=3, help="Palavras por bloco (default: 3)")
     p_cap.add_argument("--upper", action="store_true", help="Tudo em maiúsculas")
     p_cap.add_argument("--no-pop", action="store_true", help="Sem a animação de entrada de cada bloco")
+    p_cap.add_argument("--reveal", action="store_true", help="Cada palavra só aparece quando é falada")
+    p_cap.add_argument("--fontsdir", default="", help="Pasta com os .ttf/.otf da fonte (não precisa instalar)")
     p_cap.set_defaults(func=cmd_captions)
 
     # check

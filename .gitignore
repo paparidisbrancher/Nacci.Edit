@@ -15,3 +15,8 @@ __pycache__/
 *.py[cod]
 .DS_Store
 Thumbs.db
+
+# Dados de clientes ficam só nesta máquina: no repositório vai apenas o modelo
+clients/*
+!clients/_template.yaml
+projetos/

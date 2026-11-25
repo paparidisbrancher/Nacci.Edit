@@ -100,7 +100,7 @@ def cmd_setup(args):
         "schema": "nacci.edit/v1",
         "version": VERSION,
         "title": args.title or project_dir.name,
-        "client_id": args.client or "dra-marina",
+        "client_id": args.client,
         "aspect_ratio": args.aspect or "9:16",
         "resolution": "1080x1920" if (args.aspect or "9:16") == "9:16" else "1920x1080",
         "fps": 30,
@@ -731,7 +731,7 @@ def main():
     # setup
     p_setup = sub.add_parser("setup", help="Inicializa a estrutura de pastas de um projeto de vídeo")
     p_setup.add_argument("--project", required=True, help="Caminho da pasta do projeto")
-    p_setup.add_argument("--client", default="dra-marina", help="ID do cliente (ex: dra-marina)")
+    p_setup.add_argument("--client", required=True, help="ID do cliente = nome do arquivo em clients/ sem .yaml")
     p_setup.add_argument("--title", default="", help="Título do vídeo/Reels")
     p_setup.add_argument("--aspect", default="9:16", choices=["9:16", "16:9", "1:1"], help="Proporção do vídeo")
     p_setup.add_argument("--force", action="store_true", help="Sobrescrever project.json existente")

@@ -30,10 +30,9 @@ nacci-edit/
 ├── install.ps1                     # Instalador automático (Windows PowerShell)
 ├── .env.example                    # Configuração opcional de chaves gratuitas (Pexels/Pixabay)
 ├── clients/                        # Perfis de Clientes da Agência (Brand Kits & Guardrails)
-│   ├── dra-marina.yaml             # Perfil completo da Dra. Marina (Medicina + Regras CFM)
-│   └── _template.yaml              # Template para cadastrar novos clientes da agência
+│   └── _template.yaml              # Modelo: copie para clients/<cliente>.yaml (perfis reais ficam só
+│                                   #   na sua máquina; clients/ e projetos/ estão no .gitignore)
 ├── references/                     # Playbooks avançados carregados sob demanda pelo Agente
-│   ├── dra-marina-playbook.md      # Guia de edição médica e engenharia reversa de Reels
 │   └── motion-remotion-guide.md    # Guia para B-rolls animados em código (HTML/FFmpeg/Remotion)
 └── scripts/                        # Motor Python (Zero dependências externas de Python!)
     ├── nacci_cli.py                # CLI principal: setup, status, ref-analyze, add-beat, search, approve, doctor
@@ -79,20 +78,23 @@ Para adicionar milhares de vídeos verticais 9:16 de cinema do Pexels e Pixabay:
 
 ---
 
-## 🩺 Como Usar na Prática (Exemplo Real: Cliente Dra. Marina)
+## 🩺 Como Usar na Prática
 
 Você pode usar o **Nacci.Edit** apenas conversando em português com o **Antigravity** ou **Claude Code**, ou rodando os comandos diretamente:
 
-### Passo 1: Criar a Pasta do Vídeo da Dra. Marina
+### Passo 0: Cadastrar a Cliente
+Copie `clients/_template.yaml` para `clients/minha-cliente.yaml` e preencha cores, fontes, ritmo e regras do nicho. Esse arquivo não vai para o GitHub.
+
+### Passo 1: Criar a Pasta do Vídeo
 Peça no chat:
-> *"Nacci, cria um novo projeto para a Dra. Marina chamado `reel-fadiga-cronica`."*
+> *"Nacci, cria um novo projeto para a minha cliente chamado `reel-fadiga-cronica`."*
 
 Ou via terminal:
 ```bash
-python scripts/nacci_cli.py setup --project "projetos/dra-marina-fadiga" --client "dra-marina" --title "Fadiga Crônica e Cortisol"
+python scripts/nacci_cli.py setup --project "projetos/reel-fadiga-cronica" --client "minha-cliente" --title "Fadiga Crônica e Cortisol"
 ```
 O Nacci.Edit cria automaticamente:
-* `01_RAW/` (Coloque aqui o vídeo bruto que a Dra. Marina gravou)
+* `01_RAW/` (Coloque aqui o vídeo bruto que a cliente gravou)
 * `02_REFS_INSTAGRAM/` (Para salvar e dissecar os Reels de referência que ela mandou)
 * `03_BROLLS_PREVIEW/` (Onde nasce o `STORYBOARD.html`)
 * `04_BROLLS_APPROVED/` (Onde caem apenas os B-rolls aprovados por você)
@@ -101,17 +103,17 @@ O Nacci.Edit cria automaticamente:
 
 ---
 
-### Passo 2: Analisar um Reels de Referência que a Dra. Marina Mandou no Instagram
-Quando a Dra. Marina mandar um link de Reels dizendo *"Quero um vídeo nesse estilo"*, peça no chat:
-> *"Analisa essa referência do Instagram que a Dra. Marina mandou: https://www.instagram.com/reel/XXXXX/"*
+### Passo 2: Analisar um Reels de Referência que a Cliente Mandou
+Quando a cliente mandar um link de Reels dizendo *"Quero um vídeo nesse estilo"*, peça no chat:
+> *"Analisa essa referência do Instagram que a cliente mandou: https://www.instagram.com/reel/XXXXX/"*
 
 O Nacci.Edit roda `ref-analyze`, baixa a referência, conta quantos cortes existem via FFmpeg, calcula o **ASL (Tempo Médio por Corte)**, extrai 6 frames do vídeo e o agente analisa visualmente as imagens para replicar a estrutura de gancho e ritmo!
 
 ---
 
 ### Passo 3: Mapear os Beats do Roteiro e Buscar os B-Rolls
-Cole o roteiro ou a transcrição do vídeo da Dra. Marina no chat:
-> *"Aqui está o roteiro da Dra. Marina. Quebre nos beats seguindo o perfil dela e busque os B-rolls."*
+Cole o roteiro ou a transcrição do vídeo no chat:
+> *"Aqui está o roteiro. Quebre nos beats seguindo o perfil da cliente e busque os B-rolls."*
 
 O agente vai cadastrar cada Beat (`B01`, `B02`, `B03`...), varrer as fontes gratuitas e gerar o painel visual:
 * Abra `03_BROLLS_PREVIEW/STORYBOARD.html` no seu navegador!
@@ -120,7 +122,7 @@ O agente vai cadastrar cada Beat (`B01`, `B02`, `B03`...), varrer as fontes grat
 
 ### Passo 4: Revisar no Storyboard Interativo e Aprovar (Trava Editorial)
 No `STORYBOARD.html` aberto no navegador:
-1. Assista às prévias dos candidatos lado a lado para cada frase da Dra. Marina.
+1. Assista às prévias dos candidatos lado a lado para cada frase da cliente.
 2. Clique no card do seu B-roll favorito em cada Beat.
 3. Clique no botão verde **"Copiar Comando de Aprovação"** na barra inferior e cole aqui no chat (ou no terminal).
 
@@ -130,19 +132,19 @@ O Nacci.Edit baixa os arquivos aprovados em alta resolução para `04_BROLLS_APP
 
 ### Passo 5: Limpar Silêncios do Bruto e Exportar Timeline XML (Premiere / DaVinci / CapCut)
 Peça ao agente:
-> *"Limpa os silêncios do bruto da Dra. Marina em `01_RAW/`, normaliza o áudio para -14 LUFS e exporta o XML da timeline com os B-rolls aprovados."*
+> *"Limpa os silêncios do bruto em `01_RAW/`, normaliza o áudio para -14 LUFS e exporta o XML da timeline com os B-rolls aprovados."*
 
 Depois, basta abrir o **Premiere Pro** ou **DaVinci Resolve**, clicar em `File > Import > Timeline` e selecionar `05_EXPORTS/timeline_premiere_davinci.xml`:
-* **Track V1:** Vídeo principal da Dra. Marina
+* **Track V1:** Vídeo principal (a cliente falando)
 * **Track V2:** Todos os B-rolls aprovados já posicionados exatamente nos segundos certos de cada fala!
 
 ---
 
 ### Passo 6: Legendar e Conferir Antes de Entregar
 Peça ao agente:
-> *"Legenda o vídeo da Dra. Marina e confere antes de me mandar."*
+> *"Legenda o vídeo e confere antes de me mandar."*
 
-O agente transcreve o arquivo já cortado (`transcribe`), queima as legendas com as cores dela (`captions --client dra-marina`) e roda o `check`: se a resolução, o volume ou algum quadro estiver errado, ele corrige antes de te mostrar. As legendas também saem em `.srt`, para ajustar no CapCut ou no Premiere.
+O agente transcreve o arquivo já cortado (`transcribe`), queima as legendas com as cores da cliente (`captions --client minha-cliente`) e roda o `check`: se a resolução, o volume ou algum quadro estiver errado, ele corrige antes de te mostrar. As legendas também saem em `.srt`, para ajustar no CapCut ou no Premiere.
 
 ---
 
@@ -161,3 +163,9 @@ O Nacci.Edit junta o que cada projeto abaixo faz melhor, reescrito do zero em Py
 | [SYSTRAN/faster-whisper](https://github.com/SYSTRAN/faster-whisper) | MIT | Motor da transcrição local |
 
 **Próximas ideias pesquisadas, ainda não feitas:** cortar vídeo longo em vários Reels ([OpenShorts](https://github.com/mutonby/openshorts), [ClipsAI](https://github.com/ClipsAI/clipsai)); reenquadrar 16:9 → 9:16 seguindo o rosto (OpenShorts); remover vícios de fala ("é...", "hã") pela transcrição (video-use, ffmpeg-skill); biblioteca própria de B-roll com busca por tags (`/broll` do Melvynx); exportar a timeline em OpenTimelineIO ([OTIO](https://github.com/AcademySoftwareFoundation/OpenTimelineIO)).
+
+---
+
+## 📄 Licença
+
+[MIT](LICENSE): use, modifique e distribua à vontade, mantendo o aviso de copyright.

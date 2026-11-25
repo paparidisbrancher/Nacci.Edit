@@ -1,27 +1,20 @@
-# 🎬 Nacci.Edit — Open-Source AI Video Editing & B-Roll Agency Suite
+# 🎬 Nacci.Edit — Open-Source AI Video Editing & Media Agency Suite
 
-> **A resposta 100% gratuita e open-source às skills de edição de vídeo vendidas por milhares de reais.**  
-> Projetada para **Agências de Marketing**, **Editores de Vídeo** e **Criadores**, compatível nativamente com **Google Antigravity** e **Claude Code**.
+> **Suite open-source de edição de vídeos, curadoria de mídia de apoio, análise de referências e automação de timeline para agências de marketing e criadores.**  
+> Compatível nativamente com **Google Antigravity** e **Claude Code**.
 
 ---
 
-## 🔥 Por que o Nacci.Edit existe?
+## ✨ Principais Recursos
 
-Enquanto o mercado tenta cobrar **R$ 1.500+** por skills proprietárias como o `get-brolls` para automatizar a busca de B-rolls no terminal, o **Nacci.Edit** entrega **toda a engenharia editorial de B-rolls + Análise de Referências do Instagram + Cirurgia de Vídeo com FFmpeg + Exportação de Timeline XML (Premiere / DaVinci / CapCut)** de forma **100% aberta, auditável e gratuita**.
-
-### Comparativo Direto
-
-| Funcionalidade | Skills Pagas (R$ 1.500+) | **Nacci.Edit (Open-Source)** |
-| :--- | :---: | :---: |
-| Quebra de roteiro em **Beats** (`literal`, `ilustrativo`, `motion`) | ✅ | ✅ |
-| Busca Multi-Fonte (Pexels, Pixabay, Wikimedia, NASA, Openverse, YouTube) | ✅ | ✅ **(6 Fontes Nativas)** |
-| **Storyboard HTML Interativo** no navegador com seleção em 1 clique | ✅ | ✅ |
-| **Trava Humana Obrigatória** + Auditoria de Direitos (`ORIGEM.md`) | ✅ | ✅ |
-| **Perfis de Clientes de Agência** (`clients/dra-marina.yaml`) com Brand Kit | ❌ | ✅ **(Exclusivo)** |
-| **Engenharia Reversa de Reels do Instagram** (frequência de cortes + frames) | ❌ | ✅ **(Exclusivo)** |
-| **Cirurgia Local via FFmpeg** (Corte de silêncio, -14 LUFS, Reframe 9:16) | ❌ | ✅ **(Exclusivo)** |
-| **Exportação de Timeline XML** pronta para Premiere Pro / DaVinci / CapCut | ❌ | ✅ **(Exclusivo)** |
-| **Custo** | R$ 1.500,00 | **R$ 0,00 (MIT License)** |
+* **Mapeamento Editorial de Beats (`literal`, `ilustrativo`, `motion`)**: Estrutura roteiros e transcrições em blocos visuais cronológicos alinhados à identidade de cada cliente.
+* **Busca Multi-Fonte Nativa (6 Provedores Gratuitos)**: Integração direta com **Pexels**, **Pixabay**, **Wikimedia Commons**, **Openverse**, **NASA Media** e **YouTube (`yt-dlp`)**.
+* **Storyboard HTML Interativo**: Painel visual no navegador para pré-visualizar candidatos lado a lado e aprovar cada trecho com 1 clique.
+* **Trava Editorial e Auditoria de Direitos (`ORIGEM.md`)**: Nenhum arquivo entra na edição final sem aprovação humana e registro automático de fonte, autor e licença.
+* **Perfis de Clientes de Agência (`clients/`)**: Configuração individual de *Brand Kit* (paleta de cores, tipografia, ritmo de cortes e regras de compliance do nicho).
+* **Engenharia Reversa de Referências (Reels / TikTok / Shorts)**: Download de vídeos de referência via `yt-dlp`, detecção automática de frequência de cortes (ASL) via `ffmpeg` e extração de frames para análise visual pela IA.
+* **Cirurgia Local via FFmpeg**: Corte automático de silêncios (*dead air*), normalização de áudio para `-14 LUFS`, reenquadramento `9:16` e *overlay* de vídeo.
+* **Exportação de Timeline XML**: Geração de arquivo `.xml` (`xmeml`) pronto para importar a timeline montada no **Adobe Premiere Pro**, **DaVinci Resolve** ou **CapCut**.
 
 ---
 

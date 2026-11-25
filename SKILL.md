@@ -132,10 +132,11 @@ Quando o usuário tiver um arquivo de vídeo bruto em `01_RAW/`:
    ```bash
    python "<SKILL_DIR>/scripts/ffmpeg_tools.py" transcribe --input "05_EXPORTS/02_audio_normalizado.mp4"
    ```
-6. **Legendas animadas palavra a palavra** (palavra falada na cor `secondary` do cliente, acima da área dos botões do Reels; também salva `.ass` e `.srt` para ajustar no CapCut/Premiere). Passe `--font` com a fonte do cliente se estiver instalada; `--upper` e `--words 2` para o estilo mais agressivo:
+6. **Legendas animadas palavra a palavra** (palavra falada na cor `secondary` do cliente, acima da área dos botões do Reels; também salva `.ass` e `.srt` para ajustar no CapCut/Premiere). Use `--font` com a fonte do cliente e, se ela não estiver instalada, `--fontsdir` com a pasta dos `.ttf`. Fonte variável (um `.ttf` só, com vários pesos) sai Regular: gere antes uma cópia estática no peso certo com `fontTools.varLib.instancer`. `--reveal` faz cada palavra aparecer só quando é falada; `--upper` e `--words 2` dão o estilo mais agressivo. A legenda não mostra ponto nem vírgula, e cada frase é dividida em blocos equilibrados:
    ```bash
-   python "<SKILL_DIR>/scripts/ffmpeg_tools.py" captions --input "05_EXPORTS/03_com_broll.mp4" --transcript "05_EXPORTS/02_audio_normalizado.transcricao.json" --client "<CLIENT_ID>" --output "05_EXPORTS/04_legendado.mp4"
+   python "<SKILL_DIR>/scripts/ffmpeg_tools.py" captions --input "05_EXPORTS/03_com_broll.mp4" --transcript "05_EXPORTS/02_audio_normalizado.transcricao.json" --client "<CLIENT_ID>" --font "Jost" --fontsdir "<PASTA_DAS_FONTES>" --reveal --output "05_EXPORTS/04_legendado.mp4"
    ```
+   > **Revise a transcrição antes de legendar.** Palavra que o Whisper errou vira legenda errada na tela. Em trecho com ruído, compare dois modelos (`--model medium` e `large-v3`) ou peça a outro modelo que ouça. Corrija numa cópia do JSON (`*.transcricao-revisada.json`) e tire da legenda o que ninguém conseguiu confirmar.
 7. **Conferir o arquivo final** (resolução, fps, codec, LUFS, pico, tela preta e folha de contato). Passe em `--times` os segundos de cada corte e de cada B-roll, e **abra a imagem gerada** antes de entregar:
    ```bash
    python "<SKILL_DIR>/scripts/ffmpeg_tools.py" check --input "05_EXPORTS/04_legendado.mp4" --platform reels --times "0.5,3.2,8.0"

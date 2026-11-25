@@ -6,7 +6,7 @@ description: >-
   rastreabilidade de direitos (ORIGEM.md), cirurgia de vídeo via FFmpeg e exportação de
   timeline XML (Premiere/DaVinci/CapCut) para agências de marketing. Ative sempre que o
   usuário pedir para editar vídeos, buscar B-rolls, analisar referências de Reels, atender
-  clientes da agência (como a Dra. Marina) ou executar comandos do Nacci.Edit.
+  clientes da agência ou executar comandos do Nacci.Edit.
 ---
 
 # Nacci.Edit — AI Video Editing & B-Roll Agency Suite
@@ -23,7 +23,7 @@ Você está operando o **Nacci.Edit**, a skill open-source definitiva de engenha
 O **Nacci.Edit** NUNCA joga arquivos aleatórios na timeline sem curadoria. Ele segue um fluxo editorial de 6 etapas com **trava humana obrigatória**:
 
 1. **`setup` (Estruturação por Projeto/Cliente):** Cada vídeo tem sua própria pasta isolada com `01_RAW`, `02_REFS_INSTAGRAM`, `03_BROLLS_PREVIEW`, `04_BROLLS_APPROVED`, `05_EXPORTS`, `project.json`, `ROTEIRO.md` e `ORIGEM.md`.
-2. **`ref-analyze` (Engenharia Reversa de Referências do Instagram):** Quando a cliente (ex: **Dra. Marina**) envia links de Reels/TikToks como referência, baixamos o vídeo via `yt-dlp`, detectamos a frequência exata de cortes (ASL) via `ffmpeg`, extraímos frames e usamos `read_file` nas imagens para dissecar o gancho visual, estilo de legenda e proporção de B-rolls.
+2. **`ref-analyze` (Engenharia Reversa de Referências do Instagram):** Quando a cliente envia links de Reels/TikToks como referência, baixamos o vídeo via `yt-dlp`, detectamos a frequência exata de cortes (ASL) via `ffmpeg`, extraímos frames e usamos `read_file` nas imagens para dissecar o gancho visual, estilo de legenda e proporção de B-rolls.
 3. **`brief` (Mapeamento de Beats):** Se há vídeo bruto, rode antes o `transcribe` (seção 3.G): o agente **lê** o vídeo pela transcrição com o tempo de cada palavra, e não precisa assistir quadro a quadro. Lemos o `ROTEIRO.md` (ou a transcrição do A-Roll) mais o perfil YAML do cliente (`clients/<cliente>.yaml`) e quebramos o vídeo em **Beats** cronológicos (`B01`, `B02`...), classificando cada beat como:
    - **`literal`**: Fato, estudo científico (PubMed/Nature), notícia, pessoa, produto ou diagrama anatômico real.
    - **`ilustrativo`**: Cena estética/cinemática de apoio (rotina, consultório, bem-estar, emoção).
@@ -56,8 +56,10 @@ O **Nacci.Edit** NUNCA joga arquivos aleatórios na timeline sem curadoria. Ele 
 ## 2. Perfis de Clientes da Agência (`clients/`)
 
 Antes de planejar qualquer edição ou buscar B-rolls, **SEMPRE leia o arquivo do cliente** em `clients/<client-id>.yaml`:
-- **Cliente Padrão / Primeira Cliente:** **Dra. Marina** (`clients/dra-marina.yaml` e guia detalhado em `references/dra-marina-playbook.md`).
-  - Se o usuário mencionar "Dra. Marina", "vídeo da doutora", ou não especificar outro cliente, carregue automaticamente as diretrizes de `clients/dra-marina.yaml` (estética médica elegante, verde petróleo `#1E3A3A` + dourado `#D4AF37`, respeito à Resolução CFM nº 2.336/2023, sem imagens apelativas/gore).
+- Liste `clients/` para ver quem existe e encontre o perfil pelo nome que o usuário citar (o `name` dentro do YAML). Se houver `clients/<client-id>-playbook.md`, leia também: é o guia detalhado daquele cliente.
+- Se o usuário não disser o cliente e houver mais de um perfil, pergunte antes de começar.
+- Siga as regras de compliance do nicho que estiverem no perfil (ex.: publicidade médica) em toda escolha de B-roll, texto na tela e legenda.
+- **Perfis reais ficam só na máquina:** `clients/` está no `.gitignore` (menos o `_template.yaml`), assim como `projetos/`. Para um cliente novo, copie o `_template.yaml` para `clients/<client-id>.yaml`. Nunca coloque dado de cliente no repositório.
 
 ---
 
@@ -67,7 +69,7 @@ Execute estes comandos via terminal (`run_command` / Bash) apontando para a past
 
 ### A. Inicializar um Projeto de Vídeo (`setup`)
 ```bash
-python "<SKILL_DIR>/scripts/nacci_cli.py" setup --project "<PASTA_DO_PROJETO>" --client "dra-marina" --title "Titulo do Reels" --aspect "9:16"
+python "<SKILL_DIR>/scripts/nacci_cli.py" setup --project "<PASTA_DO_PROJETO>" --client "<CLIENT_ID>" --title "Titulo do Reels" --aspect "9:16"
 ```
 
 ### B. Checar Status e Próximo Passo (`status`)
@@ -77,7 +79,7 @@ python "<SKILL_DIR>/scripts/nacci_cli.py" status --project "<PASTA_DO_PROJETO>"
 
 ### C. Analisar Referência do Instagram / TikTok Enviada pela Cliente (`ref-analyze`)
 ```bash
-python "<SKILL_DIR>/scripts/nacci_cli.py" ref-analyze --project "<PASTA_DO_PROJETO>" --url "<URL_DO_REELS>" --notes "Referência enviada pela Dra. Marina"
+python "<SKILL_DIR>/scripts/nacci_cli.py" ref-analyze --project "<PASTA_DO_PROJETO>" --url "<URL_DO_REELS>" --notes "O que a cliente gostou nesta referência"
 ```
 > **Ação obrigatória do Agente após rodar `ref-analyze`:** Use a ferramenta `read_file` para abrir o arquivo `02_REFS_INSTAGRAM/REF_01/ANALISE_REFERENCIA.md` e inspecionar visualmente os frames extraídos (`frame_01.jpg` a `frame_06.jpg`)! Descreva para o usuário o ritmo de cortes (ASL), o tipo de gancho nos primeiros 3s e o estilo visual da referência.
 
@@ -132,7 +134,7 @@ Quando o usuário tiver um arquivo de vídeo bruto em `01_RAW/`:
    ```
 6. **Legendas animadas palavra a palavra** (palavra falada na cor `secondary` do cliente, acima da área dos botões do Reels; também salva `.ass` e `.srt` para ajustar no CapCut/Premiere). Passe `--font` com a fonte do cliente se estiver instalada; `--upper` e `--words 2` para o estilo mais agressivo:
    ```bash
-   python "<SKILL_DIR>/scripts/ffmpeg_tools.py" captions --input "05_EXPORTS/03_com_broll.mp4" --transcript "05_EXPORTS/02_audio_normalizado.transcricao.json" --client "dra-marina" --output "05_EXPORTS/04_legendado.mp4"
+   python "<SKILL_DIR>/scripts/ffmpeg_tools.py" captions --input "05_EXPORTS/03_com_broll.mp4" --transcript "05_EXPORTS/02_audio_normalizado.transcricao.json" --client "<CLIENT_ID>" --output "05_EXPORTS/04_legendado.mp4"
    ```
 7. **Conferir o arquivo final** (resolução, fps, codec, LUFS, pico, tela preta e folha de contato). Passe em `--times` os segundos de cada corte e de cada B-roll, e **abra a imagem gerada** antes de entregar:
    ```bash
@@ -151,8 +153,8 @@ python "<SKILL_DIR>/scripts/xml_exporter.py" --project "<PASTA_DO_PROJETO>"
 ## 4. Atalhos de Comandos no Chat (Comportamento do Agente)
 
 O usuário pode acionar você com linguagem natural ou usando comandos rápidos estilo slash:
-- `/nacci-edit` ou *"Nacci, inicia um vídeo novo para a Dra. Marina"* -> Rode `setup` + carregue `clients/dra-marina.yaml`.
-- `/nacci-ref <url>` ou *"A Dra. Marina mandou esse Reels de referência: <url>"* -> Rode `ref-analyze`, inspecione os frames extraídos e explique a estrutura do vídeo.
-- `/nacci-brief` ou *"Aqui está o roteiro da Dra. Marina, monta os beats e busca os B-rolls"* -> Salve no `ROTEIRO.md`, cadastre todos os beats com `add-beat`, rode `search` e gere o `STORYBOARD.html`.
+- `/nacci-edit` ou *"Nacci, inicia um vídeo novo para a <cliente>"* -> Rode `setup` + carregue `clients/<client-id>.yaml`.
+- `/nacci-ref <url>` ou *"A cliente mandou esse Reels de referência: <url>"* -> Rode `ref-analyze`, inspecione os frames extraídos e explique a estrutura do vídeo.
+- `/nacci-brief` ou *"Aqui está o roteiro, monta os beats e busca os B-rolls"* -> Salve no `ROTEIRO.md`, cadastre todos os beats com `add-beat`, rode `search` e gere o `STORYBOARD.html`.
 - `/nacci-approve` ou *"Aprova o C1 pro B01 e o C2 pro B02"* -> Rode `approve`, gere o `ORIGEM.md` e exporte o XML da timeline com `xml_exporter.py`.
-- `/nacci-legenda` ou *"Legenda o vídeo da Dra. Marina"* -> Rode `transcribe` no arquivo cortado, `captions` com `--client` e `check`; abra a folha de contato.
+- `/nacci-legenda` ou *"Legenda o vídeo"* -> Rode `transcribe` no arquivo cortado, `captions` com `--client` e `check`; abra a folha de contato.

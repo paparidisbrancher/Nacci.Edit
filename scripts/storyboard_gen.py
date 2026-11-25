@@ -16,7 +16,7 @@ from pathlib import Path
 
 def generate_html(project_dir: Path, data: dict) -> str:
     title = html.escape(data.get("title", "Projeto Nacci.Edit"))
-    client = html.escape(data.get("client_id", "dra-marina"))
+    client = html.escape(data.get("client_id", ""))
     aspect = html.escape(data.get("aspect_ratio", "9:16"))
     beats = data.get("beats", [])
     proj_path_js = str(project_dir).replace("\\", "\\\\")

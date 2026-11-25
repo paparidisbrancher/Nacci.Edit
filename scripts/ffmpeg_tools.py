@@ -292,7 +292,7 @@ def cmd_transcribe(args):
 # LEGENDAS ANIMADAS (ASS palavra a palavra, cores do cliente, área segura do Reels)
 # ============================================================================
 def client_colors(client: str) -> dict:
-    """Lê as cores '#RRGGBB' do YAML do cliente (aceita o id, ex. 'dra-marina', ou o caminho)."""
+    """Lê as cores '#RRGGBB' do YAML do cliente (aceita o id, ex. 'minha-cliente', ou o caminho)."""
     path = Path(client)
     if not path.exists():
         path = SKILL_DIR / "clients" / f"{client}.yaml"

@@ -21,7 +21,7 @@ assert pack_words(W).splitlines() == ["[0000.00-0001.20] Você acorda cansada?",
 assert ass_time(3723.456) == "1:02:03.46"
 assert srt_time(3723.456) == "01:02:03,456"
 assert ass_color("#D4AF37") == "&H0037AFD4"
-assert client_colors("dra-marina")["secondary"] == "#D4AF37"
+assert client_colors("_template")["secondary"] == "#FFFFFF"
 
 ass = build_ass(W, 1080, 1920, {"secondary": "#D4AF37"}, "Arial", 80, 3, False, True)
 assert ass.count("Dialogue:") == len(W)  # um evento por palavra falada, com a palavra da vez destacada

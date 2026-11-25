@@ -1,0 +1,17 @@
+# Arquivos sensíveis e chaves de API
+.env
+*.env
+
+# Pastas de mídia pesada de projetos locais
+projetos/*/01_RAW/*.mp4
+projetos/*/01_RAW/*.mov
+projetos/*/02_REFS_INSTAGRAM/*/*.mp4
+projetos/*/03_BROLLS_PREVIEW/*.mp4
+projetos/*/04_BROLLS_APPROVED/*.mp4
+projetos/*/05_EXPORTS/*.mp4
+
+# Python cache
+__pycache__/
+*.py[cod]
+.DS_Store
+Thumbs.db

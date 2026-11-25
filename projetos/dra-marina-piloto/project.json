@@ -1,0 +1,51 @@
+{
+  "schema": "nacci.edit/v1",
+  "version": "1.0.0",
+  "title": "Dra. Marina - Fadiga e Cortisol (Piloto)",
+  "client_id": "dra-marina",
+  "aspect_ratio": "9:16",
+  "resolution": "1080x1920",
+  "fps": 30,
+  "stage": "exported",
+  "created_at": "2026-11-25T15:00:32",
+  "updated_at": "2026-11-25T15:00:33",
+  "references": [],
+  "beats": [
+    {
+      "id": "B01",
+      "time_start": "00:00",
+      "time_end": "00:03",
+      "type": "ilustrativo",
+      "speech": "Você acorda cansada mesmo dormindo 8 horas por noite?",
+      "query": "woman waking up tired morning cinematic",
+      "provider_preference": "auto",
+      "notes": "Gancho de identificação imediata nos primeiros 3s",
+      "candidates": [],
+      "approved_candidate": null
+    },
+    {
+      "id": "B02",
+      "time_start": "00:03",
+      "time_end": "00:09",
+      "type": "literal",
+      "speech": "A desregulação do ciclo do cortisol matinal afeta diretamente sua energia celular.",
+      "query": "cortisol hormone diagram circadian rhythm",
+      "provider_preference": "auto",
+      "notes": "Ilustração científica limpa (Wikimedia/Openverse)",
+      "candidates": [],
+      "approved_candidate": null
+    },
+    {
+      "id": "B03",
+      "time_start": "00:09",
+      "time_end": "00:15",
+      "type": "ilustrativo",
+      "speech": "No consultório, ajustamos três pilares antes de qualquer suplementação.",
+      "query": "aesthetic medical consultation doctor talking patient",
+      "provider_preference": "auto",
+      "notes": "Cena humanizada de consultório elegante",
+      "candidates": [],
+      "approved_candidate": null
+    }
+  ]
+}

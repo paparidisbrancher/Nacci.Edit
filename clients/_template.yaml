@@ -1,0 +1,36 @@
+# Perfil de Cliente Template (Copie para criar novos clientes da agência)
+
+client:
+  id: "novo-cliente"
+  name: "Nome do Cliente"
+  niche: "Nicho / Especialidade"
+  platforms:
+    - "Instagram Reels (9:16 - 1080x1920 @ 30fps)"
+  target_lufs: -14.0
+
+brand_identity:
+  tone: "Descreva o tom de voz (ex: energético, sóbrio, técnico, divertido)"
+  pacing:
+    hook_first_3s: "Ritmo nos primeiros 3 segundos"
+    body_pacing: "Frequência de B-rolls no meio do vídeo"
+    cta_ending: "Estilo do fechamento"
+  colors:
+    primary: "#000000"
+    secondary: "#FFFFFF"
+    background: "#F5F5F5"
+  typography:
+    heading_font: "Inter"
+    body_font: "Inter"
+    caption_style: "Estilo de legenda"
+
+broll_preferences:
+  preferred_sources:
+    - "pexels"
+    - "pixabay"
+    - "wikimedia"
+    - "youtube"
+  visual_keywords_boost: []
+  avoid_keywords: []
+
+instagram_references:
+  saved_references: []

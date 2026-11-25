@@ -12,8 +12,12 @@
 * **Storyboard HTML Interativo**: Painel visual no navegador para pré-visualizar candidatos lado a lado e aprovar cada trecho com 1 clique.
 * **Trava Editorial e Auditoria de Direitos (`ORIGEM.md`)**: Nenhum arquivo entra na edição final sem aprovação humana e registro automático de fonte, autor e licença.
 * **Perfis de Clientes de Agência (`clients/`)**: Configuração individual de *Brand Kit* (paleta de cores, tipografia, ritmo de cortes e regras de compliance do nicho).
-* **Engenharia Reversa de Referências (Reels / TikTok / Shorts)**: Download de vídeos de referência via `yt-dlp`, detecção automática de frequência de cortes (ASL) via `ffmpeg` e extração de frames para análise visual pela IA.
-* **Cirurgia Local via FFmpeg**: Corte automático de silêncios (*dead air*), normalização de áudio para `-14 LUFS`, reenquadramento `9:16` e *overlay* de vídeo.
+* **Engenharia Reversa de Referências (Reels / TikTok / Shorts)**: Download de vídeos de referência via `yt-dlp`, cortes por minuto e mediana do plano via `ffmpeg`, quadros dos 3 primeiros segundos (o gancho) e a fala da referência transcrita.
+* **Cirurgia Local via FFmpeg**: Corte automático de silêncios (*dead air*) com fade de 30 ms em cada corte, normalização de áudio para `-14 LUFS`, reenquadramento `9:16` e *overlay* de vídeo.
+* **Transcrição Palavra a Palavra (local)**: `faster-whisper` na sua máquina, sem enviar o áudio para lugar nenhum. O agente lê o vídeo pela fala com tempos, em vez de assistir quadro a quadro.
+* **Legendas Animadas**: palavra falada destacada na cor do cliente, blocos de 2 a 3 palavras, acima dos botões do Reels/TikTok, mais `.srt` e `.ass` para ajustar no CapCut ou Premiere.
+* **Autoverificação Antes de Entregar**: `check` confere resolução, fps, codec, volume (LUFS), pico e tela preta, e gera uma folha de contato que o agente olha antes de dizer "pronto".
+* **O Bruto é Sagrado**: nenhuma ferramenta grava por cima do arquivo de entrada; saída existente só é substituída com `--overwrite`.
 * **Exportação de Timeline XML**: Geração de arquivo `.xml` (`xmeml`) pronto para importar a timeline montada no **Adobe Premiere Pro**, **DaVinci Resolve** ou **CapCut**.
 
 ---
@@ -32,10 +36,13 @@ nacci-edit/
 │   ├── dra-marina-playbook.md      # Guia de edição médica e engenharia reversa de Reels
 │   └── motion-remotion-guide.md    # Guia para B-rolls animados em código (HTML/FFmpeg/Remotion)
 └── scripts/                        # Motor Python (Zero dependências externas de Python!)
-    ├── nacci_cli.py                # CLI principal: setup, status, ref-analyze, add-beat, search, approve
+    ├── nacci_cli.py                # CLI principal: setup, status, ref-analyze, add-beat, search, approve, doctor
     ├── storyboard_gen.py           # Gerador do painel visual interativo STORYBOARD.html
-    ├── ffmpeg_tools.py             # Cirurgia de vídeo: cut-silence, normalize-audio, reframe-9x16, overlay
+    ├── ffmpeg_tools.py             # Cirurgia de vídeo: cut-silence, normalize-audio, reframe-9x16, overlay,
+    │                               #   transcribe, captions, check
     └── xml_exporter.py             # Exportador de timeline XML para Premiere Pro e DaVinci Resolve
+tests/
+└── test_ffmpeg_tools.py            # Checagem rápida: python tests/test_ffmpeg_tools.py
 ```
 
 ---
@@ -48,6 +55,9 @@ Para destravar o download de referências do Instagram/YouTube e os cortes locai
 * **Python 3.9+**
 * **FFmpeg** (No Windows, rode no terminal: `winget install Gyan.FFmpeg`)
 * **yt-dlp** (No Windows, rode no terminal: `pip install yt-dlp` ou `winget install yt-dlp.yt-dlp`)
+* **faster-whisper** (para transcrição e legendas: `pip install faster-whisper`; roda local, a primeira vez baixa o modelo)
+
+Depois, confira tudo de uma vez: `python scripts/nacci_cli.py doctor`
 
 ### 2. Rodar o Instalador Automático (Antigravity + Claude Code)
 Abra o PowerShell na pasta do `nacci-edit` e execute:
@@ -128,15 +138,26 @@ Depois, basta abrir o **Premiere Pro** ou **DaVinci Resolve**, clicar em `File >
 
 ---
 
-## 🌐 Como Publicar este Repositório no seu GitHub
+### Passo 6: Legendar e Conferir Antes de Entregar
+Peça ao agente:
+> *"Legenda o vídeo da Dra. Marina e confere antes de me mandar."*
 
-Esta pasta já foi inicializada com Git. Para subir para o seu GitHub como **`Nacci.Edit`**:
+O agente transcreve o arquivo já cortado (`transcribe`), queima as legendas com as cores dela (`captions --client dra-marina`) e roda o `check`: se a resolução, o volume ou algum quadro estiver errado, ele corrige antes de te mostrar. As legendas também saem em `.srt`, para ajustar no CapCut ou no Premiere.
 
-```bash
-cd C:\Users\erick\.gemini\antigravity\scratch\nacci-edit
-git add .
-git commit -m "feat: initial release of Nacci.Edit open-source video editing & B-roll skill"
-git branch -M main
-git remote add origin https://github.com/SEU_USUARIO/Nacci.Edit.git
-git push -u origin main
-```
+---
+
+## 🧩 De Onde Vieram as Ideias
+
+O Nacci.Edit junta o que cada projeto abaixo faz melhor, reescrito do zero em Python (nenhum código foi copiado):
+
+| Projeto | Licença | O que trouxemos |
+| :--- | :--- | :--- |
+| [browser-use/video-use](https://github.com/browser-use/video-use) | MIT | O agente lê o vídeo pela transcrição com tempos; fade de 30 ms nos cortes; estratégia aprovada antes do corte; autoverificação do render |
+| [kajisho5/ffmpeg-skill](https://github.com/kajisho5/ffmpeg-skill) | MIT | Proteção do arquivo de origem, `doctor`, conferência do arquivo final com folha de contato, legenda com destaque palavra a palavra na área segura |
+| [KyaniteLabs/kinocut](https://github.com/KyaniteLabs/kinocut) | Apache-2.0 | Portões de qualidade antes de entregar (tela preta, volume) |
+| [louisedesadeleer/b-roll-finder](https://github.com/louisedesadeleer/b-roll-finder) | MIT | Método de escolha de B-roll: interpretar cada beat, descartar o que não tem B-roll certo, preferir B-roll objetivo, B-roll mudo e na palavra |
+| [Melvynx/video-agent-skills](https://github.com/Melvynx/video-agent-skills) | MIT | Medir a referência (cortes, gancho) para copiar o estilo; `.srt` para o editor |
+| [WyattBlue/auto-editor](https://github.com/WyattBlue/auto-editor) | Unlicense | Respiro (margin) nas bordas da fala ao cortar silêncio |
+| [SYSTRAN/faster-whisper](https://github.com/SYSTRAN/faster-whisper) | MIT | Motor da transcrição local |
+
+**Próximas ideias pesquisadas, ainda não feitas:** cortar vídeo longo em vários Reels ([OpenShorts](https://github.com/mutonby/openshorts), [ClipsAI](https://github.com/ClipsAI/clipsai)); reenquadrar 16:9 → 9:16 seguindo o rosto (OpenShorts); remover vícios de fala ("é...", "hã") pela transcrição (video-use, ffmpeg-skill); biblioteca própria de B-roll com busca por tags (`/broll` do Melvynx); exportar a timeline em OpenTimelineIO ([OTIO](https://github.com/AcademySoftwareFoundation/OpenTimelineIO)).
